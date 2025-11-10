@@ -1,0 +1,38 @@
+﻿@{
+    ViewData["Title"] = "Create / Edit";
+}
+@model ExpensesInfo.Models.Expense
+
+<div class="text-center">
+    <h1 class="display-4">Create or edit expense</h1>
+</div>
+<form asp-action="CreateEditExpenseForm" asp-controller="Home" method="post">
+    @*  <label class="mt-4">Id</label> *@
+    <input hidden type="number" class="form-control" placeholder="0" asp-for="Id" />
+    <div style="display: block">
+        <label class="form-label mt-4">Value $</label>
+        <input type="number" class="form-control" placeholder="0" asp-for="Value" step="0.01" />
+        <span asp-validation-for="Value" class="text-danger"></span>
+    </div>
+    <div style="display: block">
+        <label class="form-label mt-4">Description</label>
+        <input type="text" class="form-control" placeholder="Add a description" asp-for="Description" />
+        <span asp-validation-for="Description" class="text-danger"></span>
+    </div>
+    <div class="mt-4">    
+        <label asp-for="ExpenseTypeId" class="form-label mt-4"></label>
+        <select asp-for="ExpenseTypeId" class="form-select" asp-items="@(new SelectList(ViewBag.Types, "Id", "Name"))">
+            <option value="">-- Select the expense type --</option>
+        </select>
+        <span asp-validation-for="ExpenseTypeId" class="text-danger"></span>
+    </div>
+    <div style="display: block">
+        <label class="mt-4">Date</label>
+        <input type="date" class="form-control" asp-for="Date" />
+        <span asp-validation-for="Date" class="text-danger"></span>
+    </div>
+    <button class="btn btn-primary mt-4" type="submit">Ok</button>
+</form>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
