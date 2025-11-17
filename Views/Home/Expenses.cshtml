@@ -67,7 +67,7 @@
                             @expense.Date.ToString("yyyy-MM-dd")
                         </td>
                         <td>
-                            @expense.ExpenseType.Name
+                            @expense.ExpenseType?.Name
                         </td>
                         <td>
                             <a class="btn btn-primary" asp-action="CreateEditExpense" asp-controller="Home" asp-route-id="@expense.Id">Edit</a>
