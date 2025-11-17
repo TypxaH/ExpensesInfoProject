@@ -43,13 +43,13 @@ namespace ExpensesInfo.Controllers
 
             return View(allExpenses);
         }
-        public IActionResult CreateEditExpense(int? expenseId)
+        public IActionResult CreateEditExpense(int? Id)
         {
             var types = _context.ExpenseTypes.ToList();
             ViewBag.Types = types;
-            if (expenseId != null)
+            if (Id != null)
             {                
-                var expenseToCreate = _context.Expenses.SingleOrDefault(expense => expense.Id == expenseId);
+                var expenseToCreate = _context.Expenses.SingleOrDefault(expense => expense.Id == Id);
                 return View(expenseToCreate);
 
             }
