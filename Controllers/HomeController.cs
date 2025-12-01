@@ -1,4 +1,5 @@
 using ExpensesInfo.Models;
+using ExpensesInfo.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
@@ -7,82 +8,57 @@ namespace ExpensesInfo.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
-        private readonly ExpensesInfoDbContext _context;
+        private readonly IExpenseService _expenses;
 
-        public HomeController(ILogger<HomeController> logger,ExpensesInfoDbContext context)
+        public HomeController(IExpenseService expenses)
         {
-            _logger = logger;
-            _context = context;
+            _expenses = expenses;
         }
 
         public IActionResult Index()
         {
             return View();
         }
-        public IActionResult Expenses(int? typeId)
+        public async Task<IActionResult> Expenses(int? typeId)
         {
-            // Зареждаме всички видове за филтъра
-            var types = _context.ExpenseTypes.ToList();
-            ViewBag.Types = types;
+            ViewBag.Types = await _expenses.GetAllTypesAsync();
             ViewBag.SelectedTypeId = typeId;
-
-            // Базова заявка
-            var query = _context.Expenses
-                .Include(e => e.ExpenseType)
-                .AsQueryable();
-
-            // Ако има избран тип – филтрираме
-            if (typeId.HasValue)
-            {
-                query = query.Where(e => e.ExpenseTypeId == typeId.Value);
-            }
-
-            var allExpenses = query.ToList();
-            ViewBag.TotalExpenses = allExpenses.Sum(e => e.Value);
-
-            return View(allExpenses);
+            var all = await _expenses.GetAllAsync(typeId);
+            ViewBag.TotalExpenses = await _expenses.GetTotalAsync(typeId);
+            return View(all);
         }
-        public IActionResult CreateEditExpense(int? Id)
+        public async Task<IActionResult> CreateEditExpense(int? id)
         {
-            var types = _context.ExpenseTypes.ToList();
-            ViewBag.Types = types;
-            if (Id != null)
-            {                
-                var expenseToCreate = _context.Expenses.SingleOrDefault(expense => expense.Id == Id);
-                return View(expenseToCreate);
-
-            }
-            
-            return View();
+            ViewBag.Types = await _expenses.GetAllTypesAsync();
+            if (id == null) return View(new Expense());
+            var model = await _expenses.GetByIdAsync(id.Value);
+            if (model == null) return NotFound();
+            return View(model);
         }
-        public IActionResult DeleteExpense(int id)
+        public async Task<IActionResult> DeleteExpense(int id)
         {
-            var expenseToDelete = _context.Expenses.SingleOrDefault(expense => expense.Id == id);
-            _context.Expenses.Remove(expenseToDelete);
-            _context.SaveChanges();
-            return RedirectToAction("Expenses");
+            await _expenses.DeleteAsync(id);
+            return RedirectToAction(nameof(Expenses));
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult CreateEditExpenseForm(Expense model)
+        public async Task<IActionResult> CreateEditExpenseForm(Expense model)
         {
-            /*if (!ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-               
-                ViewBag.Types = _context.ExpenseTypes.ToList();
+                ViewBag.Types = await _expenses.GetAllTypesAsync();
                 return View("CreateEditExpense", model);
-            }*/
+            }
             if (model.Id == 0)
             {
-                _context.Expenses.Add(model);
+                if (model.Date == default) model.Date = DateTime.Today;
+                await _expenses.CreateAsync(model);
             }
             else
             {
-                _context.Update(model);
+                await _expenses.UpdateAsync(model);
             }
-                _context.SaveChanges();
-            return RedirectToAction("Expenses");
+            return RedirectToAction(nameof(Expenses));
         }
 
 

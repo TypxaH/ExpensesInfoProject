@@ -1,77 +1,56 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using ExpensesInfo.Models;
+using ExpensesInfo.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using ExpensesInfo.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ExpensesInfo.Controllers
 {
     public class ExpenseTypesController : Controller
     {
-        private readonly ExpensesInfoDbContext _context;
+        private readonly IExpenseTypeService _types;
 
-        public ExpenseTypesController(ExpensesInfoDbContext context)
+        public ExpenseTypesController(IExpenseTypeService types)
         {
-            _context = context;
+            _types = types;
         }
 
         // Списък с всички видове
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            var types = _context.ExpenseTypes.ToList();
-            return View(types);
+            var list = await _types.GetAllAsync();
+            return View(list);
         }
 
         // Форма за създаване / редакция
-        public IActionResult CreateEdit(int? id)
+        public async Task<IActionResult> CreateEdit(int? id)
         {
-            if (id == null)
-            {
-                return View(new ExpenseType());
-            }
-
-            var type = _context.ExpenseTypes.SingleOrDefault(x => x.Id == id);
-            if (type == null) return NotFound();
-
-            return View(type);
+            if (id == null) return View(new ExpenseType());
+            var model = await _types.GetByIdAsync(id.Value);
+            if (model == null) return NotFound();
+            return View(model);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult CreateEdit(ExpenseType model)
+        public async Task<IActionResult> CreateEdit(ExpenseType model)
         {
-            /*if (!ModelState.IsValid)
-            {
-                return View(model);
-            }*/
-
+            if (!ModelState.IsValid)return View(model);
             if (model.Id == 0)
-            {
-                _context.ExpenseTypes.Add(model);
-            }
+                await _types.CreateAsync(model);
             else
-            {
-                var existing = _context.ExpenseTypes.SingleOrDefault(x => x.Id == model.Id);
-                if (existing == null) return NotFound();
-
-                existing.Name = model.Name;
-            }
-
-            _context.SaveChanges();
+                await _types.UpdateAsync(model);
             return RedirectToAction(nameof(Index));
         }
 
         // Изтриване
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var type = _context.ExpenseTypes.SingleOrDefault(x => x.Id == id);
-            if (type == null) return NotFound();
-
-            _context.ExpenseTypes.Remove(type);
-            _context.SaveChanges();
+            await _types.DeleteAsync(id);
             return RedirectToAction(nameof(Index));
         }
     }
